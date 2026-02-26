@@ -1,4 +1,4 @@
-module RailsMail
+module RailsEmail
   # Isolated module so the method survives Rails code reloading
   module MailersControllerExtension
     def spam_check
@@ -40,7 +40,7 @@ module RailsMail
 
   class Engine < ::Rails::Engine
     # Must be prepended so it wins over ActionMailer's wildcard /*path
-    initializer "rails_mail.routes" do
+    initializer "rails_email.routes" do
       Rails.application.routes.prepend do
         get "/rails/mailers/spam_check/*path", to: "rails/mailers#spam_check"
       end
@@ -51,10 +51,10 @@ module RailsMail
       require "rails/mailers_controller"
 
       Rails::MailersController.prepend_view_path(
-        RailsMail::Engine.root.join("app/views")
+        RailsEmail::Engine.root.join("app/views")
       )
       Rails::MailersController.layout(false)
-      Rails::MailersController.include(RailsMail::MailersControllerExtension)
+      Rails::MailersController.include(RailsEmail::MailersControllerExtension)
     end
   end
 end

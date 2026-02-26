@@ -1,4 +1,4 @@
-# RailsMail
+# RailsEmail
 
 A polished mailer preview UI for Rails — inspired by [React Email](https://react.email). Drop it in and your `/rails/mailers` preview route gets a modern dark/light interface with viewport controls, source inspection, CSS compatibility checks, and spam scoring.
 
@@ -34,7 +34,7 @@ Zero configuration. No build step. Works with your existing `ActionMailer::Previ
 Add to your `Gemfile`:
 
 ```ruby
-gem "rails_mail"
+gem "rails_email"
 ```
 
 Then run:
@@ -61,7 +61,7 @@ Your existing `ActionMailer::Preview` classes appear in the left sidebar. Click 
 
 ### Preview classes
 
-RailsMail works with standard ActionMailer previews. Place them in `test/mailers/previews/` (or wherever `config.action_mailer.preview_paths` points):
+RailsEmail works with standard ActionMailer previews. Place them in `test/mailers/previews/` (or wherever `config.action_mailer.preview_paths` points):
 
 ```ruby
 # test/mailers/previews/user_mailer_preview.rb
@@ -111,7 +111,7 @@ The score is displayed as **X / 10** (higher is better). The individual SpamAssa
 
 ## How it works
 
-RailsMail is a Rails Engine that:
+RailsEmail is a Rails Engine that:
 
 1. Prepends its own views to `Rails::MailersController`, replacing the default preview templates without touching the controller itself.
 2. Adds a single new route — `GET /rails/mailers/spam_check/*path` — prepended before ActionMailer's wildcard so it is matched first.
@@ -126,8 +126,8 @@ No monkey-patching, no middleware, no asset pipeline involvement. Everything is 
 Clone the repo and install dependencies:
 
 ```bash
-git clone https://github.com/your-org/rails_mail.git
-cd rails_mail
+git clone https://github.com/your-org/rails_email.git
+cd rails_email
 bundle install
 ```
 

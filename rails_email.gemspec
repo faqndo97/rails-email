@@ -1,8 +1,8 @@
-require_relative "lib/rails_mail/version"
+require_relative "lib/rails_email/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "rails_mail"
-  spec.version       = RailsMail::VERSION
+  spec.name          = "rails_email"
+  spec.version       = RailsEmail::VERSION
   spec.authors       = ["Facundo"]
   spec.summary       = "React Email-style mailer preview UI for Rails"
   spec.description   = "Replaces the /rails/mailers preview UI with a polished React Email-inspired interface, while keeping ActionMailer::Preview classes and routes unchanged."
