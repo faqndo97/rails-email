@@ -7,6 +7,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "React Email-style mailer preview UI for Rails"
   spec.description   = "Replaces the /rails/mailers preview UI with a polished React Email-inspired interface, while keeping ActionMailer::Preview classes and routes unchanged."
   spec.license       = "MIT"
+  spec.homepage      = "https://github.com/faqndo97/rails-email"
 
   spec.required_ruby_version = ">= 3.1"
 

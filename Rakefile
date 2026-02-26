@@ -1,4 +1,5 @@
 require "bundler/setup"
+require "bundler/gem_tasks"
 
 desc "Start the dummy app at http://localhost:3000/rails/mailers"
 task :server do
