@@ -4,6 +4,21 @@ A polished mailer preview UI for Rails — inspired by [React Email](https://rea
 
 Zero configuration. No build step. Works with your existing `ActionMailer::Preview` classes.
 
+<img src="docs/screenshots/email-preview.png" alt="Email preview" width="100%">
+
+<details>
+<summary>More screenshots</summary>
+
+| Source view | Mobile viewport |
+|---|---|
+| <img src="docs/screenshots/source-view.png" alt="Source view" width="100%"> | <img src="docs/screenshots/mobile-viewport.png" alt="Mobile viewport" width="100%"> |
+
+| Compatibility checker |
+|---|
+| <img src="docs/screenshots/compatibility-panel.png" alt="Compatibility panel" width="100%"> |
+
+</details>
+
 ---
 
 ## Features
