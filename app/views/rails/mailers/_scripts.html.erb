@@ -1,0 +1,344 @@
+<%# colorjs for dark-mode color inversion — same approach as React Email %>
+<script src="https://cdn.jsdelivr.net/npm/colorjs.io/dist/color.legacy.min.js"></script>
+
+<script>
+(function () {
+
+  // ── Theme ────────────────────────────────────────────────
+  var savedTheme = localStorage.getItem("rm_theme") || "dark";
+  document.documentElement.dataset.theme = savedTheme;
+
+  window.rmToggleTheme = function () {
+    var html   = document.documentElement;
+    var isDark = html.dataset.theme === "dark";
+    html.dataset.theme = isDark ? "light" : "dark";
+    localStorage.setItem("rm_theme", isDark ? "light" : "dark");
+    var moon = document.getElementById("rm-icon-moon");
+    var sun  = document.getElementById("rm-icon-sun");
+    if (moon) moon.classList.toggle("hidden", isDark);
+    if (sun)  sun.classList.toggle("hidden",  !isDark);
+    rmApplyDarkMode(!isDark);
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    if (savedTheme === "light") {
+      var moon = document.getElementById("rm-icon-moon");
+      var sun  = document.getElementById("rm-icon-sun");
+      if (moon) moon.classList.add("hidden");
+      if (sun)  sun.classList.remove("hidden");
+    }
+    // Apply dark mode inversion on initial load if dark theme active
+    var iframe = document.getElementById("rm-email-frame");
+    if (iframe) {
+      iframe.addEventListener("load", function () {
+        if (document.documentElement.dataset.theme === "dark") {
+          rmApplyDarkMode(true);
+        }
+      });
+    }
+  });
+
+  // ── Dark mode: colorjs LCH inversion (React Email algorithm) ─
+  function* walkDom(node) {
+    if (node.nodeType === 1) yield node;
+    for (var c of Array.from(node.childNodes)) yield* walkDom(c);
+  }
+
+  function invertLch(colorStr, isBg) {
+    if (!colorStr || colorStr === "transparent" || colorStr === "rgba(0, 0, 0, 0)") return null;
+    try {
+      var c   = new Color(colorStr).to("lch");
+      var l   = c.l;
+      var newL = isBg
+        ? (l >= 50 ? 50 - (l - 50) * 0.75 : 50 + (50 - l) * 0.75)
+        : (l <  50 ? 50 + (50 - l) * 0.75 : 50 - (l - 50) * 0.75);
+      c.l = Math.max(0, Math.min(100, newL));
+      c.c = Math.max(0, c.c * 0.8);
+      return c.to("srgb").toString({ format: "hex" });
+    } catch (e) { return null; }
+  }
+
+  window.rmApplyDarkMode = function (isDark) {
+    var iframe = document.getElementById("rm-email-frame");
+    if (!iframe || !iframe.contentDocument || !iframe.contentDocument.body) return;
+    var doc = iframe.contentDocument;
+
+    if (!isDark) {
+      // Restore originals
+      for (var el of walkDom(doc.body)) {
+        if (el.dataset.rmBg !== undefined) { el.style.backgroundColor = el.dataset.rmBg; delete el.dataset.rmBg; }
+        if (el.dataset.rmFg !== undefined) { el.style.color            = el.dataset.rmFg; delete el.dataset.rmFg; }
+      }
+      doc.documentElement.style.colorScheme = "";
+      return;
+    }
+
+    doc.documentElement.style.colorScheme = "dark";
+
+    if (typeof Color === "undefined") return; // CDN not loaded
+
+    var view = doc.defaultView || iframe.contentWindow;
+    for (var el of walkDom(doc.body)) {
+      var s = view.getComputedStyle(el);
+
+      var bg = s.backgroundColor;
+      if (bg && bg !== "rgba(0, 0, 0, 0)") {
+        el.dataset.rmBg = el.style.backgroundColor || "";
+        var invBg = invertLch(bg, true);
+        if (invBg) el.style.backgroundColor = invBg;
+      }
+
+      var fg = s.color;
+      if (fg && fg !== "rgba(0, 0, 0, 0)") {
+        el.dataset.rmFg = el.style.color || "";
+        var invFg = invertLch(fg, false);
+        if (invFg) el.style.color = invFg;
+      }
+    }
+  };
+
+  // ── Sidebar ──────────────────────────────────────────────
+  window.rmToggleSidebar = function () {
+    var s = document.getElementById("rm-sidebar");
+    if (s) s.classList.toggle("collapsed");
+  };
+
+  // ── View (preview ↔ source) ──────────────────────────────
+  window.rmSetView = function (view) {
+    var vP = document.getElementById("rm-view-preview");
+    var vS = document.getElementById("rm-view-source");
+    var bP = document.getElementById("rm-btn-preview");
+    var bS = document.getElementById("rm-btn-source");
+    if (vP) vP.classList.toggle("hidden", view !== "preview");
+    if (vS) vS.classList.toggle("hidden", view !== "source");
+    if (bP) bP.classList.toggle("active", view === "preview");
+    if (bS) bS.classList.toggle("active", view === "source");
+  };
+
+  // ── Viewport size ────────────────────────────────────────
+  var _vpOpen = false;
+
+  window.rmToggleViewportDropdown = function (e) {
+    e.stopPropagation();
+    _vpOpen = !_vpOpen;
+    var p = document.getElementById("rm-viewport-panel");
+    if (p) p.classList.toggle("hidden", !_vpOpen);
+  };
+
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("#rm-size-group")) {
+      var p = document.getElementById("rm-viewport-panel");
+      if (p) p.classList.add("hidden");
+      _vpOpen = false;
+    }
+  });
+
+  window.rmApplyPreset = function (name, w, h) {
+    var iframe = document.getElementById("rm-email-frame");
+    var stage  = document.getElementById("rm-stage");
+    if (!iframe) return;
+
+    // Width
+    if (w) {
+      iframe.style.width    = w + "px";
+      iframe.style.maxWidth = w + "px";
+      if (stage) stage.style.alignItems = "flex-start";
+    } else {
+      iframe.style.width    = "100%";
+      iframe.style.maxWidth = "";
+      if (stage) stage.style.alignItems = "";
+    }
+
+    // Height
+    if (h) {
+      iframe.style.height = h + "px";
+    } else {
+      iframe.style.height = "100%";
+    }
+
+    // Update preset active states
+    document.querySelectorAll(".rm-vp-preset").forEach(function (btn) {
+      btn.classList.toggle("rm-vp-active", btn.dataset.preset === name);
+    });
+
+    // Sync desktop / mobile quick buttons
+    var bD = document.getElementById("rm-btn-desktop");
+    var bM = document.getElementById("rm-btn-mobile");
+    if (bD) bD.classList.toggle("active", !w);
+    if (bM) bM.classList.toggle("active", w === 375);
+
+    localStorage.setItem("rm_vp", JSON.stringify({ name: name, w: w, h: h }));
+
+    // Close dropdown
+    var panel = document.getElementById("rm-viewport-panel");
+    if (panel) panel.classList.add("hidden");
+    _vpOpen = false;
+  };
+
+  window.rmApplyCustomViewport = function () {
+    var wv = parseInt(document.getElementById("rm-vp-w").value, 10) || null;
+    var hv = parseInt(document.getElementById("rm-vp-h").value, 10) || null;
+    rmApplyPreset("Custom", wv, hv);
+  };
+
+  window.rmSetSize = function (size) {
+    if (size === "mobile") rmApplyPreset("Mobile", 375, null);
+    else                   rmApplyPreset("Full",   null, null);
+  };
+
+  // Restore saved viewport
+  document.addEventListener("DOMContentLoaded", function () {
+    var saved = localStorage.getItem("rm_vp");
+    if (saved) { try { var vp = JSON.parse(saved); rmApplyPreset(vp.name, vp.w, vp.h); } catch (e) {} }
+  });
+
+  // ── Source sub-tabs ──────────────────────────────────────
+  window.rmSetSourceTab = function (id, btn) {
+    document.querySelectorAll(".rm-source-body").forEach(function (el) { el.classList.add("hidden"); });
+    document.querySelectorAll(".rm-source-tab").forEach(function (el) { el.classList.remove("active"); });
+    var el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
+    btn.classList.add("active");
+  };
+
+  // ── Bottom panel tabs ────────────────────────────────────
+  window.rmSetBottomTab = function (id, btn) {
+    document.querySelectorAll(".rm-tab-content").forEach(function (el) { el.classList.remove("active"); });
+    document.querySelectorAll(".rm-bottom-tab").forEach(function (el) { el.classList.remove("active"); });
+    var el = document.getElementById(id);
+    if (el) el.classList.add("active");
+    btn.classList.add("active");
+  };
+
+  // ── Bottom panel collapse ────────────────────────────────
+  var _panelOpen = true;
+  window.rmTogglePanel = function () {
+    _panelOpen = !_panelOpen;
+    var body = document.getElementById("rm-panel-body");
+    var icon = document.getElementById("rm-collapse-icon");
+    if (body) body.classList.toggle("hidden", !_panelOpen);
+    if (icon) icon.style.transform = _panelOpen ? "" : "rotate(180deg)";
+  };
+
+  // ── Compatibility check ──────────────────────────────────
+  var RM_COMPAT = [
+    { prop: "border-radius",    rx: /border-radius/i,                     clients: "Outlook 2007–21, Outlook.com" },
+    { prop: "box-sizing",       rx: /box-sizing/i,                         clients: "Gmail, Outlook 2007–21, Yahoo Mail" },
+    { prop: "overflow",         rx: /\boverflow\s*:/i,                     clients: "Outlook 2007–21" },
+    { prop: "word-break",       rx: /word-break/i,                         clients: "Outlook 2007–21, Yahoo Mail" },
+    { prop: "display: flex",    rx: /display\s*:\s*flex/i,                  clients: "Outlook 2007–21, Gmail (webmail)" },
+    { prop: "display: grid",    rx: /display\s*:\s*grid/i,                  clients: "Outlook 2007–21, Gmail, Yahoo Mail" },
+    { prop: "CSS variables",    rx: /var\s*\(/i,                            clients: "Outlook 2007–21, Gmail, Yahoo Mail" },
+    { prop: "position (fixed)", rx: /position\s*:\s*(fixed|sticky)/i,      clients: "Gmail, Outlook.com, Yahoo Mail" },
+    { prop: "opacity",          rx: /\bopacity\s*:/i,                       clients: "Outlook 2007–16" },
+    { prop: "text-shadow",      rx: /text-shadow/i,                         clients: "Outlook 2007–21" },
+    { prop: "animation",        rx: /\banimation\b/i,                       clients: "Outlook 2007–21, Gmail, Yahoo Mail" },
+    { prop: "transform",        rx: /\btransform\s*:/i,                     clients: "Outlook 2007–21, Gmail" },
+    { prop: "filter",           rx: /\bfilter\s*:/i,                        clients: "Outlook 2007–21, Gmail" },
+    { prop: "background-size",  rx: /background-size/i,                     clients: "Outlook 2007–21" },
+    { prop: "min-height",       rx: /min-height/i,                          clients: "Outlook 2007–21" },
+    { prop: "object-fit",       rx: /object-fit/i,                          clients: "Outlook 2007–21, Gmail" },
+    { prop: "letter-spacing",   rx: /letter-spacing/i,                      clients: "Outlook 2007–21" },
+    { prop: "@font-face",       rx: /@font-face/i,                          clients: "Gmail, Yahoo Mail, Outlook 2007–21" },
+    { prop: "@media queries",   rx: /@media/i,                              clients: "Gmail (webmail), Outlook 2007–03" },
+  ];
+
+  window.rmRunCompatibilityCheck = function () {
+    var box = document.getElementById("rm-compat-content");
+    if (!box) return;
+
+    var iframe = document.getElementById("rm-email-frame");
+    if (!iframe || !iframe.contentDocument || !iframe.contentDocument.body) {
+      box.innerHTML = '<p class="rm-check-error">No email loaded.</p>';
+      return;
+    }
+
+    var doc  = iframe.contentDocument;
+    var css  = Array.from(doc.querySelectorAll("style")).map(function (s) { return s.textContent || ""; }).join("\n");
+    var inl  = Array.from(doc.querySelectorAll("[style]")).map(function (el) { return el.getAttribute("style") || ""; }).join("\n");
+    var text = css + "\n" + inl;
+
+    var issues = RM_COMPAT.filter(function (r) { return r.rx.test(text); });
+
+    if (issues.length === 0) {
+      box.innerHTML = '<div class="rm-check-ok"><div class="rm-check-ok-icon">✓</div><strong>Great compatibility</strong><p>No known issues detected.</p></div>';
+      return;
+    }
+
+    var rows = issues.map(function (r) {
+      return "<tr><td class='rm-compat-prop'>⚠ " + r.prop + "</td><td class='rm-compat-clients'>Not supported in " + r.clients + "</td></tr>";
+    }).join("");
+    box.innerHTML = "<table class='rm-compat-table'>" + rows + "</table>";
+  };
+
+  // ── Spam check (Postmark / SpamAssassin) ─────────────────
+  window.rmRunSpamCheck = function (path) {
+    var box = document.getElementById("rm-spam-content");
+    if (!box) return;
+    box.innerHTML = '<div class="rm-check-loading"><span>Checking…</span></div>';
+
+    fetch("/rails/mailers/spam_check/" + path)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) {
+          box.innerHTML = '<p class="rm-check-error">⚠ ' + data.error + '</p>';
+          return;
+        }
+
+        var score        = parseFloat(data.score) || 0;
+        var displayScore = Math.round(Math.max(0, 10 - score) * 10) / 10;
+        var iconClass    = score < 1.5 ? "" : score < 3 ? "rm-check-ok-icon--warn" : "rm-check-ok-icon--danger";
+        var label        = score < 1.5 ? "Clean email" : score < 3 ? "Low spam risk" : "Spam issues detected";
+
+        var header = '<div class="rm-check-ok">' +
+          '<div class="rm-check-ok-icon ' + iconClass + '">' + displayScore + '/10</div>' +
+          '<strong>' + label + '</strong>' +
+          '<p>SpamAssassin score: ' + score + '</p>' +
+          '</div>';
+
+        var rows = "";
+        if (data.rules && data.rules.length) {
+          var sorted = data.rules.slice().sort(function (a, b) { return parseFloat(b.score) - parseFloat(a.score); });
+          var actionable = sorted.filter(function (r) {
+            var desc = (r.description || r.name || "");
+            return !desc.startsWith("ADMINISTRATOR NOTICE") &&
+                   !desc.startsWith("Informational:");
+          });
+          rows = "<table class='rm-spam-table'>" +
+            actionable.map(function (r) {
+              return "<tr><td class='rm-spam-points'>" + r.score + "</td><td class='rm-spam-desc'>" + (r.description || r.name || "") + "</td></tr>";
+            }).join("") +
+            "</table>";
+        }
+
+        box.innerHTML = header + rows;
+      })
+      .catch(function () {
+        box.innerHTML = '<p class="rm-check-error">Spam check unavailable — no internet connection.</p>';
+      });
+  };
+
+  // ── Rails-compatible iframe refresh ─────────────────────
+  window.refreshBody = function (reload) {
+    var partSel   = document.querySelector("select#part");
+    var localeSel = document.querySelector("select#locale");
+    var iframe    = document.getElementById("rm-email-frame");
+    if (!iframe) return;
+
+    var partParam = partSel
+      ? partSel.options[partSel.selectedIndex].value
+      : (document.querySelector("#mime_type") ? document.querySelector("#mime_type").dataset.mimeType : "");
+    var localeParam = localeSel ? localeSel.options[localeSel.selectedIndex].value : null;
+    var fresh = localeParam ? ("?" + partParam + "&" + localeParam) : ("?" + partParam);
+
+    iframe.contentWindow.location = fresh;
+
+    var url   = location.pathname.replace(/\.(txt|html)$/, "");
+    var fmt   = /html/.test(partParam) ? ".html" : ".txt";
+    var state = localeParam ? (url + fmt + "?" + localeParam) : (url + fmt);
+    if (reload) location.href = state;
+    else if (history.replaceState) history.replaceState({}, "", state);
+  };
+
+}());
+</script>

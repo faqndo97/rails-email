@@ -1,0 +1,26 @@
+<%
+  _all_previews    = ActionMailer::Preview.all
+  _active_preview  = local_assigns.fetch(:active_preview, nil)
+  _active_action   = local_assigns.fetch(:active_action, nil)
+%>
+<aside class="rm-sidebar" id="rm-sidebar">
+  <% _all_previews.each do |preview| %>
+    <div class="rm-mailer-group">
+      <div class="rm-mailer-label"><%= preview.preview_name.gsub("_", " ").titleize %></div>
+      <% preview.emails.each do |email| %>
+        <%
+          path   = "#{preview.preview_name}/#{email}"
+          href   = url_for(controller: "rails/mailers", action: "preview", path: path)
+          active = _active_preview == preview && _active_action.to_s == email.to_s
+        %>
+        <a href="<%= href %>" class="rm-email-link <%= 'active' if active %>">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <%= email %>
+        </a>
+      <% end %>
+    </div>
+  <% end %>
+</aside>

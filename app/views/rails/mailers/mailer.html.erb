@@ -1,0 +1,49 @@
+<% if @preview.emails.any? %>
+  <script>
+    window.location.replace("<%= url_for(controller: 'rails/mailers', action: 'preview', path: "#{@preview.preview_name}/#{@preview.emails.first}") %>");
+  </script>
+<% else %>
+<!DOCTYPE html>
+<html data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title><%= @preview.preview_name %> — rails mail</title>
+  <%= render "rails/mailers/styles" %>
+</head>
+<body>
+<div class="rm-app">
+  <nav class="rm-nav">
+    <div class="rm-nav-left">
+      <a class="rm-logo" href="<%= url_for(controller: 'rails/mailers', action: 'index') %>">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+        rails mail
+      </a>
+    </div>
+    <div class="rm-nav-center">
+      <span class="rm-breadcrumb"><%= @preview.preview_name %></span>
+    </div>
+    <div class="rm-nav-right">
+      <button class="rm-icon-btn" onclick="rmToggleTheme()" title="Toggle theme">
+        <svg id="rm-icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg id="rm-icon-sun" class="hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="rm-body">
+    <%= render "rails/mailers/sidebar", active_preview: @preview, active_action: nil %>
+    <main class="rm-main">
+      <div class="rm-empty">
+        <h2>No preview methods defined</h2>
+        <p>Add methods to <code style="font-family: monospace; font-size: 11px;"><%= @preview.name %></code></p>
+      </div>
+    </main>
+  </div>
+</div>
+<%= render "rails/mailers/scripts" %>
+</body>
+</html>
+<% end %>
